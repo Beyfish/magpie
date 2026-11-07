@@ -23,6 +23,7 @@ import (
 
 	"github.com/yetone/magpie/internal/plugin"
 	"github.com/yetone/magpie/internal/provider"
+	"github.com/yetone/magpie/internal/settings"
 	"github.com/yetone/magpie/internal/usage"
 )
 
@@ -424,6 +425,25 @@ func pluginPageRoutes(mux *http.ServeMux, web bool) {
 			}
 		}
 		writeJSON(rw, out)
+	})
+	// which plugin pages the sidebar's Plugins group leaves out
+	// (settings.PluginPagesHidden), in magpie's settings; one not sent
+	// stays as it is
+	mux.HandleFunc("POST /api/plugin-pages/hidden", func(rw http.ResponseWriter, r *http.Request) {
+		var in struct{ Hidden *[]string }
+		if err := json.NewDecoder(http.MaxBytesReader(rw, r.Body, 64<<10)).Decode(&in); err != nil {
+			fail(rw, err)
+			return
+		}
+		s := settings.Load()
+		if in.Hidden != nil {
+			s.PluginPagesHidden = *in.Hidden
+		}
+		if err := settings.Save(s); err != nil {
+			fail(rw, err)
+			return
+		}
+		writeJSON(rw, settingsState())
 	})
 	mux.HandleFunc("GET /api/plugin-panels", func(rw http.ResponseWriter, r *http.Request) {
 		_, out := windowParts()

@@ -206,12 +206,47 @@
     return b;
   }
 
+  // Settings › Plugins: which of the plugins' pages the sidebar shows
+  function drawPagesSettings(list, hidden) {
+    const box = $("#pluginPagesSettings");
+    if (!box) return;
+    const head = el("div", "row pref");
+    const headWho = el("div", "who");
+    headWho.append(el("div", "name", t("Plugin pages")));
+    headWho.append(el("div", "sub", t("Shown in the sidebar. A hidden page's plugin stays on, and stays in Extensions › Plugins › Installed.")));
+    head.append(headWho);
+    const rows = [head, ...list.map((e) => {
+      const row = el("div", "row pref plugin-pages-row");
+      const who = el("div", "who");
+      who.append(el("div", "name", titled(e)));
+      row.append(who);
+      row.append(segs([[true, t("Show")], [false, t("Hide")]], !hidden.has(e.key), async (on) => {
+        const prev = state.settings, next = new Set(hidden);
+        if (on) next.delete(e.key); else next.add(e.key);
+        state.settings = { ...prev, pluginPagesHidden: [...next] };
+        try {
+          const s = await api("plugin-pages/hidden", { hidden: [...next] });
+          state.settings = { ...state.settings, pluginPagesHidden: s.pluginPagesHidden || [] };
+        } catch (err) { state.settings = prev; settingsErr(err); return; }
+        load();
+      }));
+      return row;
+    })];
+    box.replaceChildren(...rows);
+    box.hidden = !list.length;
+    if (typeof setSetTab === "function") setSetTab(setTab);
+  }
+
   async function load() {
     loadPanels();
     let list;
     try { list = await api("plugin-pages"); } catch { return; }
     // an answer that isn't a list is not known: the tabs drawn stay
     if (!Array.isArray(list)) return;
+    // hidden pages (settings' pluginPagesHidden) get no entry
+    const hidden = new Set(state.settings?.pluginPagesHidden || []);
+    drawPagesSettings(list, hidden);
+    list = list.filter((e) => !hidden.has(e.key));
     const nav = $("#nav");
     const keys = new Set(list.map((e) => e.key));
     // a page whose plugin went off, or away: its tab goes, and the window

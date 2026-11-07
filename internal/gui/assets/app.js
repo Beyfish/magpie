@@ -19731,9 +19731,9 @@ function setSetTab(tab, remember) {
     setTab = tab;
     try { localStorage.setItem("magpie.settingsTab", tab); } catch {}
   }
-  // Plugins is there while a plugin's panel is (magpie.panels' settings)
+  // Plugins is there while a plugin's panel or its page is
   for (const id of SET_TABS) $("#setTab-" + id).hidden = featureHides($("#setTab-" + id)) || !partShows($("#setPage-" + id))
-    || (id === "plugins" && !$("#setPage-plugins .plugin-panel"));
+    || (id === "plugins" && !$("#setPage-plugins .plugin-panel, #setPage-plugins .plugin-pages-row"));
   if (!SET_TABS.includes(tab) || $("#setTab-" + tab).hidden) tab = SET_TABS.find((id) => !$("#setTab-" + id).hidden) || "general";
   for (const id of SET_TABS) {
     const b = $("#setTab-" + id), on = id === tab;

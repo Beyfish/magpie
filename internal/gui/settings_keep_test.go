@@ -206,6 +206,7 @@ func TestSettingsSaveKeepsWhatItDoesNotSend(t *testing.T) {
 	was.RequestArchiveLocal, was.RequestArchiveLocalMB = true, 256
 	was.ProxyCustom = "http://me:secret@proxy.example:8080"
 	was.PanelShortcut = "Ctrl+Alt+K"
+	was.PluginPagesHidden = []string{"plugin-glance"} // set on its own (plugin-pages/hidden)
 	was.SearcherThen = []string{"fake/m1", "fake/m2"} // set in its own row
 	was.RouterNote = "Los Angeles"                    // the Library's servers/hub-note
 	was.RouterAllTools = true                         // the Library's servers/hub-tools

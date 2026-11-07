@@ -838,6 +838,12 @@ type Settings struct {
 	// stays. Only what that page shows: routing, caps, counting, the tray
 	// panel (PanelUsageHidden is its own) and the menu bar's cells keep them.
 	UsageCardsHidden []string `json:"usageCardsHidden,omitempty"`
+	// PluginPagesHidden are the community plugin pages, by the window's page
+	// key ("plugin-" and the package's short name), that the sidebar's
+	// Plugins group leaves out. It is what that group shows, nothing more:
+	// the plugin itself stays on under plugins.json, its panels stay in
+	// magpie's own pages, and the Installed list still shows it.
+	PluginPagesHidden []string `json:"pluginPagesHidden,omitempty"`
 	// ClientAgents counts a client magpie doesn't know as one of the agents
 	// it does, on the Usage and Sessions pages (#1958, NorethSea): a bridge
 	// that starts Codex's app-server under a name of its own
@@ -2325,6 +2331,7 @@ func saveOwn(s Settings, recording, reads bool) error {
 	s.PanelUsageHidden = ids(s.PanelUsageHidden)
 	s.UsageAgentsHidden = ids(s.UsageAgentsHidden)
 	s.UsageCardsHidden = ids(s.UsageCardsHidden)
+	s.PluginPagesHidden = ids(s.PluginPagesHidden)
 	s.ClientAgents = clientAgents(s.ClientAgents)
 	s.UsageCleared = usageCleared(s.UsageCleared)
 	s.TrayUsages = ids(s.TrayUsages)
