@@ -1,20 +1,11 @@
 // A community plugin's own page in the window (docs/subsystems/
 // plugin-runtime.md, P4): package.json's magpie.page, in a tab of the
 // sidebar's Plugins group, after the built-in pages. The page runs in a
-// frame sandboxed to scripts alone, in an origin of its own: it has no
-// way to the window, to magpie's API (apiFramed) or to the network (its
-// policy, pluginpage.go). What it asks of the window comes by message,
-// from that frame only, and the window answers only what the page may:
-// the theme, its own options, and the reads its package declared
-// (magpie.permissions), which /api/plugin-pages/read checks again.
-// A page that throws, or never says hello, shows the kernel's "This
-// page stopped working" with its Try again.
-//
-// Panels (magpie.panels, P5) are framed the same way in a page's
-// .plugin-slot, as tall as they draw, and one that breaks says so in its
-// place. A page may take a built-in one's place (magpie.page.replaces),
-// and its actions (magpie.actions, P6) are row menu items that open it:
-// plugin-runtime.md says the rest.
+// frame sandboxed to scripts alone, in an origin of its own, so it can
+// reach neither the window nor the network; what it asks of the window
+// comes by message. Settings › Plugins' rows are in
+// pluginpagesettings.js, imported when drawn, so they weigh nothing on
+// the core. Panels and actions are the rest of plugin-runtime.md.
 (() => {
   if (mode !== "window") return;
   // how long a page has to say hello before it is taken as broken
@@ -206,36 +197,12 @@
     return b;
   }
 
-  // Settings › Plugins: which of the plugins' pages the sidebar shows
-  function drawPagesSettings(list, hidden) {
-    const box = $("#pluginPagesSettings");
-    if (!box) return;
-    const head = el("div", "row pref");
-    const headWho = el("div", "who");
-    headWho.append(el("div", "name", t("Plugin pages")));
-    headWho.append(el("div", "sub", t("Shown in the sidebar. A hidden page's plugin stays on, and stays in Extensions › Plugins › Installed.")));
-    head.append(headWho);
-    const rows = [head, ...list.map((e) => {
-      const row = el("div", "row pref plugin-pages-row");
-      const who = el("div", "who");
-      who.append(el("div", "name", titled(e)));
-      row.append(who);
-      row.append(segs([[true, t("Show")], [false, t("Hide")]], !hidden.has(e.key), async (on) => {
-        const prev = state.settings, next = new Set(hidden);
-        if (on) next.delete(e.key); else next.add(e.key);
-        state.settings = { ...prev, pluginPagesHidden: [...next] };
-        try {
-          const s = await api("plugin-pages/hidden", { hidden: [...next] });
-          state.settings = { ...state.settings, pluginPagesHidden: s.pluginPagesHidden || [] };
-        } catch (err) { state.settings = prev; settingsErr(err); return; }
-        load();
-      }));
-      return row;
-    })];
-    box.replaceChildren(...rows);
-    box.hidden = !list.length;
-    if (typeof setSetTab === "function") setSetTab(setTab);
-  }
+  // Settings › Plugins' rows are in pluginpagesettings.js, imported
+  // when drawn, so the list weighs nothing on the core
+  const drawPagesSettings = (list, hidden) => {
+    if (window.pluginPagesSettingsDraw) return pluginPagesSettingsDraw(list, hidden);
+    import("./pluginpagesettings.js").then(() => pluginPagesSettingsDraw(list, hidden), () => {});
+  };
 
   async function load() {
     loadPanels();
@@ -243,7 +210,6 @@
     try { list = await api("plugin-pages"); } catch { return; }
     // an answer that isn't a list is not known: the tabs drawn stay
     if (!Array.isArray(list)) return;
-    // hidden pages (settings' pluginPagesHidden) get no entry
     const hidden = new Set(state.settings?.pluginPagesHidden || []);
     drawPagesSettings(list, hidden);
     list = list.filter((e) => !hidden.has(e.key));
